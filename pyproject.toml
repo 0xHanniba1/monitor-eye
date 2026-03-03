@@ -19,5 +19,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "pytest-html"]
 
+[project.entry-points."pytest11"]
+monitor_eye = "monitor_eye.pytest_plugin"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
