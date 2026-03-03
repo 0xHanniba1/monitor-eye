@@ -1,9 +1,0 @@
-pyproject.toml
-monitor_eye/__init__.py
-monitor_eye/exceptions.py
-monitor_eye.egg-info/PKG-INFO
-monitor_eye.egg-info/SOURCES.txt
-monitor_eye.egg-info/dependency_links.txt
-monitor_eye.egg-info/requires.txt
-monitor_eye.egg-info/top_level.txt
-monitor_eye/mock/__init__.py
