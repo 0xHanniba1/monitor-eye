@@ -1,54 +1,54 @@
 # MonitorEye
 
-Pure Python GUI testing toolkit for patient monitors — a lightweight SikuliX alternative.
+纯 Python 医疗监护仪 GUI 测试工具包 —— 轻量级 SikuliX 替代方案。
 
-## Why MonitorEye?
+## 为什么选择 MonitorEye？
 
-SikuliX is the de facto open-source GUI automation tool, but it has critical limitations for embedded medical device testing:
+SikuliX 是主流的开源 GUI 自动化工具，但在嵌入式医疗设备测试中存在关键缺陷：
 
-| Problem (SikuliX) | Solution (MonitorEye) |
+| SikuliX 的问题 | MonitorEye 的方案 |
 |---|---|
-| Jython 2.7 only | Python 3.9+ |
-| Java dependency (~80MB) | `pip install` (~5MB) |
-| VNC protocol bugs (RFB 3.x only, special keys fail) | vncdotool (RFB 3.3-3.8) |
-| OCR digit accuracy ~10% on small/inverted text | Preprocessing pipeline with auto-invert, upscale, digit whitelist |
-| No pytest integration | Native pytest fixtures |
-| No headless CI/CD | Headless by default |
+| 仅支持 Jython 2.7 | Python 3.9+ |
+| 依赖 Java（~80MB） | `pip install`（~5MB） |
+| VNC 协议兼容性差（仅 RFB 3.x，特殊键失效） | vncdotool（RFB 3.3-3.8） |
+| OCR 对小字体/反色文字识别率仅 ~10% | 预处理流水线：自动反色、放大、数字白名单 |
+| 无 pytest 集成 | 原生 pytest fixture |
+| 不支持无头 CI/CD | 默认无头运行 |
 
-## Quick Start
+## 快速开始
 
 ```bash
-# System dependency
+# 系统依赖
 brew install tesseract  # macOS
 # apt install tesseract-ocr  # Linux
 
-# Install MonitorEye
+# 安装 MonitorEye
 cd monitor-eye
 pip install -e ".[dev]"
 
-# Run example tests (uses built-in mock — no real hardware needed)
+# 运行示例测试（使用内置 Mock，无需真实硬件）
 pytest examples/test_comen_monitor.py -v
 ```
 
-## Usage
+## 使用示例
 
 ```python
 from monitor_eye import MonitorScreen
 
-# Connect to mock server (no hardware needed)
+# 连接到 Mock 服务器（无需硬件）
 screen = MonitorScreen.from_mock()
 
-# Or connect to a real monitor via VNC
+# 或连接真实监护仪（通过 VNC）
 # screen = MonitorScreen("192.168.1.100", port=5900)
 
-# Read heart rate via OCR
+# 通过 OCR 读取心率
 hr = screen.region(20, 40, 200, 80).read_number()
-print(f"Heart Rate: {hr} bpm")
+print(f"心率: {hr} bpm")
 
-# Find and click an image pattern
+# 查找并点击图标
 screen.click("alarm_icon.png")
 
-# Capture screenshot
+# 截图保存
 screen.capture("evidence/screenshot.png")
 
 screen.disconnect()
@@ -56,7 +56,7 @@ screen.disconnect()
 
 ## pytest Fixture
 
-MonitorEye registers a `monitor_screen` fixture automatically:
+MonitorEye 自动注册 `monitor_screen` fixture：
 
 ```python
 def test_heart_rate(monitor_screen):
@@ -69,66 +69,66 @@ def test_alarm_silence(monitor_screen):
     assert not monitor_screen._mock_server.renderer.alarm_active
 ```
 
-## Architecture
+## 架构
 
 ```
-MonitorScreen           ← User-facing API
-├── VNCConnection       ← vncdotool wrapper (CLI subprocess)
-├── ImageFinder         ← OpenCV template matching + NMS
-├── OCREngine           ← Tesseract + preprocessing pipeline
-└── MockVNCServer       ← Built-in RFB 3.3 server for testing
-    └── MonitorRenderer ← Pillow-based fake monitor display
+MonitorScreen           ← 用户 API
+├── VNCConnection       ← vncdotool 封装（CLI 子进程）
+├── ImageFinder         ← OpenCV 模板匹配 + NMS
+├── OCREngine           ← Tesseract + 预处理流水线
+└── MockVNCServer       ← 内置 RFB 3.3 服务器（用于测试）
+    └── MonitorRenderer ← Pillow 模拟监护仪显示
 ```
 
-### OCR Preprocessing Pipeline
+### OCR 预处理流水线
 
-Solves three specific SikuliX defects:
+解决 SikuliX 的三个具体缺陷：
 
 ```
-Raw image → Grayscale → Auto-invert (dark bg) → Scale up (small font)
-  → Morphological dilate → OTSU binarize → Tesseract (digit whitelist)
+原始图像 → 灰度化 → 自动反色（深色背景）→ 放大（小字体）
+  → 形态学膨胀 → OTSU 二值化 → Tesseract（数字白名单）
 ```
 
-1. **Auto-invert** — fixes white-on-black text (SikuliX Issue #440)
-2. **Scale up** — fixes small font (<12px) recognition failure
-3. **Digit whitelist** — fixes "13" → "'|3" misrecognition
+1. **自动反色** — 修复白字黑底识别失败（SikuliX Issue #440）
+2. **放大** — 修复小字体（<12px）识别失败
+3. **数字白名单** — 修复 "13" → "'|3" 误识别
 
-## Project Structure
+## 项目结构
 
 ```
 monitor-eye/
 ├── monitor_eye/
-│   ├── __init__.py          # Public API exports
+│   ├── __init__.py          # 公共 API 导出
 │   ├── screen.py            # MonitorScreen + Region
-│   ├── connection.py        # VNC connection (vncdotool)
-│   ├── finder.py            # Image matching (OpenCV)
-│   ├── ocr.py               # OCR engine (Tesseract)
+│   ├── connection.py        # VNC 连接（vncdotool）
+│   ├── finder.py            # 图像匹配（OpenCV）
+│   ├── ocr.py               # OCR 引擎（Tesseract）
 │   ├── exceptions.py        # FindFailed, ConnectionError
 │   ├── pytest_plugin.py     # monitor_screen fixture
 │   └── mock/
-│       ├── vnc_server.py    # Minimal RFB 3.3 VNC server
-│       └── renderer.py      # Pillow monitor display renderer
-├── tests/                   # 41 tests, all passing
+│       ├── vnc_server.py    # 最小化 RFB 3.3 VNC 服务器
+│       └── renderer.py      # Pillow 监护仪显示渲染器
+├── tests/                   # 41 个测试，全部通过
 ├── examples/
 │   └── test_comen_monitor.py
 └── pyproject.toml
 ```
 
-## Requirements
+## 环境要求
 
 - Python 3.9+
-- Tesseract OCR (`brew install tesseract` / `apt install tesseract-ocr`)
+- Tesseract OCR（`brew install tesseract` / `apt install tesseract-ocr`）
 
-## Running Tests
+## 运行测试
 
 ```bash
 pytest tests/ examples/ -v
 ```
 
-## Target Device
+## 目标设备
 
-Designed for COMEN patient monitors (C60/C80/K12 series) but works with any device accessible via VNC.
+专为科曼（COMEN）监护仪（C60/C80/K12 系列）设计，也适用于任何可通过 VNC 访问的设备。
 
-## License
+## 许可证
 
 MIT
